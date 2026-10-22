@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema RRM - Equipes de Nossa Senhora</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- pdf-lib para geração de PDF nativo com campo AcroForm editável -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    .signature-canvas {
+      touch-action: none;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #ffffff;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Barra Superior -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 no-print shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <button onclick="navigateTo('home')" class="flex items-center gap-3 text-left group focus:outline-none">
+        <img id="nav-logo" src="https://www.ens.org.br/img/logo-ens.png" onerror="this.onerror=null;this.src='image.png';" alt="Logo ENS" class="h-9 w-auto object-contain" />
+        <div>
+          <h1 class="font-bold text-slate-800 text-base sm:text-lg leading-tight group-hover:text-sky-700 transition">
+            Equipes de Nossa Senhora
+          </h1>
+          <p class="text-xs text-slate-500">Relatório da Reunião Mensal (RRM)</p>
+        </div>
+      </button>
+
+      <nav class="flex items-center gap-2">
+        <button onclick="navigateTo('home')" id="btn-nav-home" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5">
+          <i data-lucide="home" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Início</span>
+        </button>
+        <button onclick="navigateTo('cadastro')" id="btn-nav-cadastro" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 flex items-center gap-1.5">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>Cadastro da Equipe</span>
+        </button>
+        <button onclick="navigateTo('relatorio')" id="btn-nav-relatorio" class="px-3 py-2 rounded-lg text-sm font-medium bg-sky-700 text-white hover:bg-sky-800 flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>Preencher Relatório</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Notificação Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm flex items-center gap-2.5 transition-all">
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+    <span id="toast-msg">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+    <!-- ==================== TELA 1: HOME ==================== -->
+    <section id="view-home" class="space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10 text-center max-w-3xl mx-auto">
+        <!-- Imagem 2: Logo reduzida pela metade (h-16 sm:h-20) -->
+        <div class="flex justify-center mb-3">
+          <img id="home-logo" src="https://www.ens.org.br/img/logo-ens.png" onerror="this.onerror=null;this.src='image.png';" alt="Logo Equipes de Nossa Senhora" class="h-16 sm:h-20 w-auto object-contain" />
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-800">Equipes de Nossa Senhora</h2>
+        <p class="text-slate-600 font-medium mt-1">Movimento de Casais por uma Espiritualidade Conjugal</p>
+        <p class="text-xs sm:text-sm text-slate-500 mt-2 max-w-xl mx-auto">
+          Sistema local para gestão do cadastro da Equipe, histórico anual dos 12 relatórios mensais e exportação do Relatório da Reunião Mensal em PDF com campo editável para o Casal Ligação.
+        </p>
+
+        <!-- Botões Principais -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+          <button onclick="navigateTo('cadastro')" class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-slate-200 hover:border-sky-600 hover:bg-sky-50/50 transition group text-center">
+            <div class="w-12 h-12 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+              <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+            <span class="font-bold text-slate-800 text-base">Criação / Atualização de Registros</span>
+            <span class="text-xs text-slate-500 mt-1">Província, Região, Setor, Casais, SCE/AE, CL, CRS e Assinatura</span>
+          </button>
+
+          <button onclick="navigateTo('relatorio')" class="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-sky-600 bg-sky-700 hover:bg-sky-800 text-white transition group text-center shadow-sm">
+            <div class="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center mb-3 group-hover:scale-110 transition">
+              <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+            </div>
+            <span class="font-bold text-base">Preencher Relatório Mensal</span>
+            <span class="text-xs text-sky-100 mt-1">Histórico de Janeiro a Dezembro e geração de PDF</span>
+          </button>
+        </div>
+
+        <!-- Resumo Rápido do Cadastro Atual -->
+        <div id="home-summary" class="mt-8 pt-6 border-t border-slate-200 text-left"></div>
+
+        <!-- Ações Auxiliares (Exemplo / Backup) -->
+        <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs">
+          <button onclick="loadSampleData()" class="px-3 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 font-medium flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            Carregar Dados de Exemplo (Equipe 09)
+          </button>
+          <button onclick="exportBackupJSON()" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium flex items-center gap-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Exportar Backup (.json)
+          </button>
+          <label class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            Importar Backup (.json)
+            <input type="file" accept=".json" class="hidden" onchange="importBackupJSON(event)" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 2: CADASTRO DE REGISTROS ==================== -->
+    <section id="view-cadastro" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">Criação / Atualização de Registros da Equipe</h2>
+            <p class="text-sm text-slate-500">Estes dados alimentam automaticamente o cabeçalho e as listas de seleção dos relatórios mensais.</p>
+          </div>
+          <button onclick="saveCadastro()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center gap-2 shadow-sm">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            Salvar Cadastro
+          </button>
+        </div>
+
+        <form id="form-cadastro" onsubmit="event.preventDefault(); saveCadastro();" class="space-y-6 mt-6">
+          <!-- Estrutura Regional e Identificação -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Cadastro da Província *</label>
+              <input type="text" id="cad-provincia" placeholder="Ex: Leste" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Cadastro da Região *</label>
+              <input type="text" id="cad-regiao" placeholder="Ex: Espírito Santo" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Cadastro do Setor *</label>
+              <input type="text" id="cad-setor" placeholder="Ex: Vitória A" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome da Equipe *</label>
+              <input type="text" id="cad-nome-equipe" placeholder="Ex: Nossa Senhora da Saúde" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Número da Equipe *</label>
+              <input type="text" id="cad-numero-equipe" placeholder="Ex: 09" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Acompanhamento e Ligação -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                SCE / Acompanhante Espiritual (AE) *
+              </label>
+              <input type="text" id="cad-sce" placeholder="Ex: Pe. Marcos Antônio Azevedo Carvalho" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Casal Ligação (CL) *</label>
+              <input type="text" id="cad-cl" placeholder="Ex: Valéria e Jefferson" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Casal Resp. de Setor (CRS) *</label>
+              <input type="text" id="cad-crs" placeholder="Nome do CRS" required class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Casais da Equipe -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
+              Casais da Equipe (usados nas seleções de CRE, Anfitrião e Casal Animador)
+            </label>
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="novo-casal-input" placeholder="Digite o nome do casal (Ex: Lívia e Homero) e clique em Adicionar" class="flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none" onkeydown="if(event.key==='Enter'){event.preventDefault();addCasal();}" />
+              <button type="button" onclick="addCasal()" class="px-4 py-2 rounded-lg bg-sky-700 hover:bg-sky-800 text-white text-sm font-medium flex items-center gap-1.5 shrink-0">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Adicionar
+              </button>
+            </div>
+            <div id="lista-casais-chips" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Assinatura Digital (Desenho Touch/Mouse ou Upload de Imagem) -->
+          <div class="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                  Cadastro de Assinatura do Casal Responsável (CRE)
+                </h3>
+                <p class="text-xs text-slate-500">
+                  Assine diretamente no quadro abaixo (celular ou mouse) ou envie uma foto/imagem da assinatura.
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="clearSignatureCanvas()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-medium text-slate-700 flex items-center gap-1">
+                  <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+                  Limpar Quadro
+                </button>
+                <label class="px-3 py-1.5 rounded-lg bg-sky-50 border border-sky-200 hover:bg-sky-100 text-xs font-medium text-sky-800 cursor-pointer flex items-center gap-1">
+                  <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                  Upload de Assinatura
+                  <input type="file" accept="image/*" class="hidden" onchange="handleSignatureUpload(event)" />
+                </label>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div class="md:col-span-2">
+                <canvas id="sig-canvas" width="520" height="150" class="w-full h-[150px] bg-white rounded-lg border-2 border-dashed border-slate-300 cursor-crosshair signature-canvas"></canvas>
+              </div>
+              <div class="bg-white p-3 rounded-lg border border-slate-200 text-center h-[150px] flex flex-col items-center justify-center">
+                <span class="text-[11px] font-medium text-slate-400 uppercase mb-1">Assinatura Salva Atual</span>
+                <img id="sig-preview" alt="Prévia da Assinatura" class="max-h-24 max-w-full object-contain hidden" />
+                <span id="sig-empty-label" class="text-xs text-slate-400 italic">Nenhuma assinatura salva</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+            <button type="button" onclick="navigateTo('home')" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100">
+              Voltar
+            </button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center gap-2 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              Salvar Cadastro da Equipe
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 3: RELATÓRIO MENSAL (12 MESES) ==================== -->
+    <section id="view-relatorio" class="hidden space-y-6">
+
+      <!-- Barra de Seleção dos 12 Meses e Ano (A partir de 2026, sem limite superior) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 no-print">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-2 sm:gap-3">
+            <label for="sel-ano" class="text-xs font-bold uppercase tracking-wider text-slate-500">Ano Base:</label>
+            <div class="inline-flex items-center rounded-lg border border-slate-300 bg-white overflow-hidden">
+              <button type="button" onclick="stepAno(-1)" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 font-bold text-sm" title="Ano anterior">&minus;</button>
+              <input
+                type="number"
+                id="sel-ano"
+                min="2026"
+                step="1"
+                value="2026"
+                onchange="onChangeAnoMes()"
+                class="w-20 text-center py-1.5 text-sm font-bold text-slate-800 focus:outline-none border-x border-slate-200"
+              />
+              <button type="button" onclick="stepAno(1)" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 font-bold text-sm" title="Próximo ano">&#43;</button>
+            </div>
+            <span id="status-mes-badge" class="text-xs px-2.5 py-1 rounded-full font-medium"></span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="saveCurrentReport()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              Salvar Mês
+            </button>
+            <button type="button" onclick="generateOfficialPDF()" class="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="file-down" class="w-4 h-4"></i>
+              Gerar PDF Oficial (com Campo Editável p/ CL)
+            </button>
+          </div>
+        </div>
+
+        <!-- Grade dos 12 Meses -->
+        <div id="meses-grid" class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-12 gap-1.5"></div>
+      </div>
+
+      <!-- Formulário Completo do Relatório Mensal -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+
+        <!-- CABEÇALHO 1: Logo (reduzida pela metade) + Frases Centralizadas -->
+        <div class="flex flex-col items-center justify-center text-center gap-2 pb-5 border-b-2 border-sky-800">
+          <img id="rep-logo" src="https://www.ens.org.br/img/logo-ens.png" onerror="this.onerror=null;this.src='image.png';" alt="Logo ENS" class="h-14 sm:h-16 w-auto object-contain" />
+          <div class="text-center">
+            <h2 class="text-xl sm:text-2xl font-bold text-sky-900">Equipes de Nossa Senhora</h2>
+            <p class="text-xs sm:text-sm font-medium text-slate-600">Movimento de Casais por uma Espiritualidade Conjugal</p>
+          </div>
+          <div class="mt-1">
+            <span class="inline-block bg-sky-800 text-white text-xs sm:text-sm font-bold px-5 py-1.5 rounded-lg tracking-wide">
+              RELATÓRIO DA REUNIÃO MENSAL
+            </span>
+          </div>
+        </div>
+
+        <!-- CABEÇALHO 2: Informações do Cadastro Centralizadas + Seleções da Reunião (Incluindo CRS após CL) -->
+        <div class="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-200 space-y-3 text-sm">
+          <div class="font-semibold text-slate-800 border-b border-slate-200 pb-3 text-center space-y-1">
+            <p id="hdr-prov-reg-setor" class="text-sm font-bold text-slate-800">Província: - | Região: - | Setor: -</p>
+            <p id="hdr-equipe-mes" class="text-sky-800 font-bold text-sm">Equipe: - | Reunião Mês: -</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Casal Responsável de Equipe (CRE):</label>
+              <select id="rep-cre" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">SCE / AE:</label>
+              <input type="text" id="rep-sce" readonly class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Anfitrião:</label>
+              <select id="rep-anfitriao" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Casal Animador (CA):</label>
+              <select id="rep-animador" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Casal Ligação (CL):</label>
+              <input type="text" id="rep-cl" readonly class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Casal Responsável de Setor (CRS):</label>
+              <input type="text" id="rep-crs" readonly class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SEÇÃO: REUNIÃO PREPARATÓRIA ==================== -->
+        <div class="border border-slate-300 rounded-xl overflow-hidden">
+          <div class="bg-amber-500/20 border-b border-slate-300 px-4 py-2.5">
+            <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">Reunião Preparatória</h3>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-4 text-sm">
+            <!-- Linha 1: Presentes e Pauta -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-slate-200">
+              <div>
+                <span class="block text-xs font-semibold uppercase text-slate-600 mb-2">Presentes na Preparatória:</span>
+                <div class="flex flex-wrap gap-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pres-cre" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>CRE</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pres-ca" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>CA</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pres-sce" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>SCE</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <span class="block text-xs font-semibold uppercase text-slate-600 mb-2">
+                  A pauta da reunião anterior foi entregue com antecedência para:
+                </span>
+                <div class="flex flex-wrap gap-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pauta-casais" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>Casais</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pauta-cl" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>CL</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="prep-pauta-sce" class="w-4 h-4 text-sky-700 rounded" />
+                    <span>SCE</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Linha 2: Análise da reunião anterior -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start pb-4 border-b border-slate-200">
+              <div class="md:col-span-5">
+                <span class="block text-xs font-semibold text-slate-700 mb-2">
+                  Os casais que participaram da preparatória fizeram uma análise da reunião anterior?
+                </span>
+                <div class="flex gap-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="prep-analise" id="prep-analise-sim" value="SIM" class="w-4 h-4 text-sky-700" />
+                    <span>SIM</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="prep-analise" id="prep-analise-nao" value="NAO" class="w-4 h-4 text-sky-700" />
+                    <span>NÃO</span>
+                  </label>
+                </div>
+              </div>
+              <div class="md:col-span-7">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                  E daí surgiu algum ponto a ser trabalhado ou assunto a ser retomado? Descreva:
+                </label>
+                <textarea id="prep-analise-desc" rows="2" placeholder="Ex: Não." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+            </div>
+
+            <!-- Linha 3 (Imagem 5): Quantos casais enviaram as respostas antes da reunião de pauta? (0 a 7) -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+              <span class="text-xs sm:text-sm font-semibold text-slate-700">
+                Quantos casais enviaram as respostas antes da reunião de pauta?
+              </span>
+              <div class="flex flex-wrap items-center gap-3 sm:gap-4" id="prep-respostas-radios">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="0" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>0</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="1" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>1</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="2" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>2</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="3" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>3</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="4" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>4</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="5" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>5</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="6" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>6</span>
+                </label>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700">
+                  <input type="radio" name="prep-qtd-respostas" value="7" onchange="onChangeChartInputs()" class="w-4 h-4 text-sky-700" />
+                  <span>7</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Linha 4: Solicitação para o CL (Abre caixa de texto se selecionado SIM) -->
+            <div class="space-y-3">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div class="md:col-span-7 flex flex-wrap items-center justify-between gap-3">
+                  <span class="text-xs sm:text-sm font-semibold text-slate-700">
+                    Existe alguma solicitação feita para o CL que está aguardando resposta?
+                  </span>
+                  <div class="flex gap-5">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="prep-solic-cl" id="prep-solic-sim" value="SIM" onchange="toggleSolicClBox()" class="w-4 h-4 text-sky-700" />
+                      <span>SIM</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="prep-solic-cl" id="prep-solic-nao" value="NAO" onchange="toggleSolicClBox()" class="w-4 h-4 text-sky-700" />
+                      <span>NÃO</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="md:col-span-5 flex items-center gap-2">
+                  <label class="text-xs font-semibold text-slate-700 shrink-0">
+                    Foi combinado com o CL uma data p/ resposta?
+                  </label>
+                  <input type="date" id="prep-solic-data" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm" />
+                </div>
+              </div>
+
+              <!-- Caixa de texto exibida quando "SIM" é selecionado -->
+              <div id="prep-solic-desc-wrapper" class="hidden pt-1">
+                <label class="block text-xs font-semibold text-sky-800 mb-1">
+                  Descreva a solicitação feita para o CL que aguarda resposta:
+                </label>
+                <textarea
+                  id="prep-solic-desc"
+                  rows="2"
+                  placeholder="Descreva aqui qual solicitação foi feita ao Casal Ligação..."
+                  class="w-full rounded-lg border border-sky-300 bg-sky-50/40 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-600 focus:outline-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SEÇÃO: REUNIÃO MENSAL ==================== -->
+        <div class="border border-slate-300 rounded-xl overflow-hidden">
+          <div class="bg-sky-700 text-white px-4 py-2.5">
+            <h3 class="font-bold text-sm tracking-wide uppercase">Reunião Mensal</h3>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-5 text-sm">
+            <!-- Local, Data, Horário -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Local: Casa de</label>
+                <select id="rm-local" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Data da Reunião:</label>
+                <input type="date" id="rm-data" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Horário Marcado:</label>
+                <input type="time" id="rm-horario" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+
+            <!-- Presença de todos os casais -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <span class="font-semibold text-slate-800 text-xs sm:text-sm">
+                  Todos os casais estavam presentes? Se houve faltas, justifique.
+                </span>
+                <div class="flex gap-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="rm-todos-presentes" id="rm-pres-sim" value="SIM" class="w-4 h-4 text-sky-700" />
+                    <span>Sim</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="rm-todos-presentes" id="rm-pres-nao" value="NAO" class="w-4 h-4 text-sky-700" />
+                    <span>Não (Houve faltas)</span>
+                  </label>
+                </div>
+              </div>
+              <div id="rm-faltas-wrapper">
+                <textarea id="rm-faltas-justificativa" rows="2" placeholder="Descreva os casais ausentes / justificativas ou observações de presença..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"></textarea>
+              </div>
+            </div>
+
+            <!-- Horário de Início e Término + Avaliação do Tempo -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Horário de Início:</label>
+                <input type="time" id="rm-hora-inicio" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Horário de Término:</label>
+                <input type="time" id="rm-hora-termino" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <span class="font-semibold text-slate-800 text-xs sm:text-sm max-w-2xl">
+                  O tempo de duração da reunião foi suficiente e bem distribuído para se desenvolver as 5 partes da reunião ou houve prejuízo de qualidade em alguma parte?
+                </span>
+                <div class="flex gap-5">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="rm-tempo-suficiente" id="rm-tempo-sim" value="SIM" class="w-4 h-4 text-sky-700" />
+                    <span>Sim (Bem distribuído)</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="rm-tempo-suficiente" id="rm-tempo-nao" value="NAO" class="w-4 h-4 text-sky-700" />
+                    <span>Não (Houve prejuízo)</span>
+                  </label>
+                </div>
+              </div>
+              <textarea id="rm-tempo-justificativa" rows="2" placeholder="Comente sobre a distribuição do tempo nas 5 partes da reunião..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"></textarea>
+            </div>
+
+            <!-- As 6 Caixas de Texto Descritivas -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Momento de Oração:</label>
+                <textarea id="rm-oracao" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Partilha:</label>
+                <textarea id="rm-partilha" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Coparticipação:</label>
+                <textarea id="rm-coparticipacao" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Tema de Estudo:</label>
+                <textarea id="rm-tema-estudo" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Refeição:</label>
+                <textarea id="rm-refeicao" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Vida de Equipe no Movimento:</label>
+                <textarea id="rm-vida-equipe" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+              </div>
+            </div>
+
+            <!-- CONTRIBUIÇÃO (Título centralizado no topo sobre todo o conteúdo) -->
+            <div class="bg-amber-50/60 p-5 rounded-xl border border-amber-200 space-y-3 text-center">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-amber-950 border-b border-amber-200 pb-2">
+                CONTRIBUIÇÃO
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto text-center">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Valor da Contribuição Mensal (R$):</label>
+                  <input type="text" id="rm-contrib-valor" placeholder="Ex: 250,00" oninput="onChangeChartInputs()" class="w-full text-center rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Depositado ou Boleto Pago em:</label>
+                  <input type="date" id="rm-contrib-data" class="w-full text-center rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
+                </div>
+              </div>
+              <p class="text-xs text-slate-600 italic max-w-3xl mx-auto pt-1">
+                <strong>Obs.:</strong> Todos os meses o Casal Responsável de Equipe (CRE) deverá enviar junto com o Relatório Mensal, entregue ao Casal Ligação (CL), uma cópia do comprovante de pagamento da Contribuição referente à Reunião Mensal.
+              </p>
+            </div>
+
+            <!-- CONSIDERAÇÃO FINAL -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-sky-900 mb-1">Consideração Final:</label>
+              <textarea id="rm-consideracao-final" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
+            </div>
+
+            <!-- PRÓXIMA REUNIÃO (Imagem 3: Título centralizado no topo sobre todo o resto do conteúdo) -->
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3 text-center">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-sky-950 border-b border-slate-200 pb-2">
+                PRÓXIMA REUNIÃO
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left pt-1">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Data:</label>
+                  <input type="date" id="prox-data" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Local: Casa de</label>
+                  <select id="prox-local" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Casal Animador:</label>
+                  <select id="prox-animador" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Reunião Preparatória:</label>
+                  <input type="date" id="prox-preparatoria" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- DATA DO RELATÓRIO, ASSINATURA E OBSERVAÇÃO (Imagem 4: Ordem por linha: 1 Data, 2 Assinatura, 3 Observação) -->
+            <div class="pt-5 border-t border-slate-200 flex flex-col items-center text-center space-y-4">
+              <!-- Linha 1: Data do Relatório -->
+              <div class="flex flex-col items-center">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">1. Data do Relatório:</label>
+                <input type="date" id="rm-data-relatorio" class="w-52 text-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold" />
+              </div>
+
+              <!-- Linha 2: Assinatura do CRE -->
+              <div class="flex flex-col items-center justify-center border border-slate-200 rounded-xl px-8 py-4 bg-slate-50/50">
+                <img id="rep-sig-img" alt="Assinatura CRE" class="max-h-16 object-contain mb-1 hidden" />
+                <span id="rep-sig-placeholder" class="text-xs text-slate-400 italic py-3">(Assinatura cadastrada aparecerá aqui)</span>
+                <div class="w-64 border-t border-slate-400 mt-1 pt-1 text-center">
+                  <p id="rep-sig-cre-nome" class="text-xs font-bold text-slate-800 uppercase">CASAL RESPONSÁVEL</p>
+                  <p class="text-[11px] text-slate-500">Casal Responsável de Equipe - CRE</p>
+                </div>
+              </div>
+
+              <!-- Linha 3: Observação 1 -->
+              <p class="text-xs text-slate-600 italic max-w-xl">
+                <strong>Obs. 1:</strong> O Relatório deverá ser enviado para o CL até 5 dias após a realização da Reunião Mensal.
+              </p>
+            </div>
+
+            <!-- AVISO DO CAMPO EXCLUSIVO DO CASAL LIGAÇÃO NO PDF -->
+            <div class="bg-sky-50 border border-sky-200 rounded-xl p-4">
+              <div class="flex items-start gap-2.5">
+                <i data-lucide="file-edit" class="w-5 h-5 text-sky-700 shrink-0 mt-0.5"></i>
+                <div class="text-xs text-sky-900 space-y-1">
+                  <p class="font-bold uppercase">
+                    CONSIDERAÇÃO DO CASAL LIGAÇÃO (Campo Editável Diretamente no PDF)
+                  </p>
+                  <p class="text-sky-800">
+                    Este campo será preenchido diretamente no arquivo PDF pelo Casal Ligação (CL), com fonte em <strong>negrito</strong> no tamanho padrão do relatório.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================== GRÁFICO ANUAL DOS 12 MESES ==================== -->
+            <div class="bg-white border border-slate-300 rounded-xl p-4 sm:p-5 space-y-3">
+              <div class="text-center border-b border-slate-200 pb-2">
+                <h4 class="text-sm font-bold uppercase tracking-wider text-sky-950">
+                  EVOLUÇÃO ANUAL (<span id="chart-ano-label">2026</span>) — RESPOSTAS ENVIADAS X CONTRIBUIÇÃO MENSAL
+                </h4>
+                <div class="flex flex-wrap items-center justify-center gap-6 mt-1.5 text-xs">
+                  <span class="inline-flex items-center gap-2 font-semibold text-sky-700">
+                    <span class="w-3 h-3 rounded-full bg-sky-700 inline-block"></span>
+                    Eixo Esquerdo: Casais que enviaram respostas (0 a 7)
+                  </span>
+                  <span class="inline-flex items-center gap-2 font-semibold text-emerald-700">
+                    <span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                    Eixo Direito: Valor da Contribuição Mensal (R$)
+                  </span>
+                </div>
+              </div>
+              <div class="w-full overflow-x-auto">
+                <canvas id="annual-chart-canvas" width="860" height="270" class="w-full h-auto max-w-full mx-auto"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Botões de Ação no Rodapé do Relatório -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 no-print">
+          <button type="button" onclick="clearCurrentMonthReport()" class="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs sm:text-sm font-medium flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Limpar Dados Deste Mês
+          </button>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" onclick="saveCurrentReport()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              Salvar no Histórico
+            </button>
+            <button type="button" onclick="generateOfficialPDF()" class="px-6 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-sm font-semibold flex items-center gap-2 shadow-md">
+              <i data-lucide="file-down" class="w-4 h-4"></i>
+              Baixar PDF Oficial (Editável pelo CL)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. CONSTANTES E ESTADO LOCAL (localStorage)
+    // =========================================================================
+    const STORAGE_KEY_CADASTRO = 'ens_rrm_cadastro_v1';
+    const STORAGE_KEY_RELATORIOS = 'ens_rrm_relatorios_v1';
+    const OFFICIAL_LOGO_URL = 'https://www.ens.org.br/img/logo-ens.png';
+
+    const MESES = [
+      { num: '01', nome: 'Janeiro', curto: 'Jan' },
+      { num: '02', nome: 'Fevereiro', curto: 'Fev' },
+      { num: '03', nome: 'Março', curto: 'Mar' },
+      { num: '04', nome: 'Abril', curto: 'Abr' },
+      { num: '05', nome: 'Maio', curto: 'Mai' },
+      { num: '06', nome: 'Junho', curto: 'Jun' },
+      { num: '07', nome: 'Julho', curto: 'Jul' },
+      { num: '08', nome: 'Agosto', curto: 'Ago' },
+      { num: '09', nome: 'Setembro', curto: 'Set' },
+      { num: '10', nome: 'Outubro', curto: 'Out' },
+      { num: '11', nome: 'Novembro', curto: 'Nov' },
+      { num: '12', nome: 'Dezembro', curto: 'Dez' }
+    ];
+
+    let stateCadastro = {
+      provincia: '',
+      regiao: '',
+      setor: '',
+      nomeEquipe: '',
+      numeroEquipe: '',
+      casais: [],
+      sce: '',
+      cl: '',
+      crs: '',
+      assinaturaDataUrl: ''
+    };
+
+    // Mapa de relatórios por chave "ANO-MES" (ex: "2026-12")
+    let stateRelatorios = {};
+    let currentAno = '2026';
+    let currentMes = '01';
+    let cachedLogoPngBytes = null;
+
+    // =========================================================================
+    // 2. INICIALIZAÇÃO
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadFromStorage();
+      initSignaturePad();
+      preloadOfficialLogoBytes();
+      renderHomeSummary();
+      renderCadastroForm();
+      renderMesesGrid();
+      loadReportIntoForm();
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3200);
+    }
+
+    function loadFromStorage() {
+      try {
+        const cad = localStorage.getItem(STORAGE_KEY_CADASTRO);
+        if (cad) {
+          const parsed = JSON.parse(cad);
+          delete parsed.logoDataUrl;
+          stateCadastro = { ...stateCadastro, ...parsed };
+        }
+
+        const rel = localStorage.getItem(STORAGE_KEY_RELATORIOS);
+        if (rel) stateRelatorios = JSON.parse(rel);
+      } catch (e) {
+        console.error('Erro ao ler localStorage:', e);
+      }
+    }
+
+    // Pré-carrega os bytes da logo oficial usando proxies CORS confiáveis e fallback local
+    async function preloadOfficialLogoBytes() {
+      const sourcesToTry = [
+        'https://images.weserv.nl/?url=www.ens.org.br/img/logo-ens.png&output=png',
+        'https://wsrv.nl/?url=www.ens.org.br/img/logo-ens.png&output=png',
+        'https://corsproxy.io/?' + encodeURIComponent(OFFICIAL_LOGO_URL),
+        OFFICIAL_LOGO_URL,
+        'logo.png',
+        'image.png'
+      ];
+      for (const src of sourcesToTry) {
+        const bytes = await getPngBytesFromSource(src);
+        if (bytes && bytes.length > 100) {
+          cachedLogoPngBytes = bytes;
+          break;
+        }
+      }
+    }
+
+    function navigateTo(view) {
+      ['home', 'cadastro', 'relatorio'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
+      });
+      if (view === 'home') renderHomeSummary();
+      if (view === 'cadastro') renderCadastroForm();
+      if (view === 'relatorio') {
+        populateCasaisSelects();
+        updateReportHeaderInfo();
+        renderMesesGrid();
+        loadReportIntoForm();
+        renderAnnualChartCanvas();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // 3. MÓDULO DE CADASTRO E ASSINATURA DIGITAL
+    // =========================================================================
+    function renderCadastroForm() {
+      document.getElementById('cad-provincia').value = stateCadastro.provincia || '';
+      document.getElementById('cad-regiao').value = stateCadastro.regiao || '';
+      document.getElementById('cad-setor').value = stateCadastro.setor || '';
+      document.getElementById('cad-nome-equipe').value = stateCadastro.nomeEquipe || '';
+      document.getElementById('cad-numero-equipe').value = stateCadastro.numeroEquipe || '';
+      document.getElementById('cad-sce').value = stateCadastro.sce || '';
+      document.getElementById('cad-cl').value = stateCadastro.cl || '';
+      document.getElementById('cad-crs').value = stateCadastro.crs || '';
+      renderCasaisChips();
+      updateSignaturePreview();
+    }
+
+    function renderCasaisChips() {
+      const container = document.getElementById('lista-casais-chips');
+      container.innerHTML = '';
+      if (!stateCadastro.casais || stateCadastro.casais.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">Nenhum casal cadastrado ainda.</span>`;
+        return;
+      }
+      stateCadastro.casais.forEach((casal, idx) => {
+        const badge = document.createElement('div');
+        badge.className = 'inline-flex items-center gap-2 bg-white border border-slate-300 rounded-full px-3 py-1 text-xs font-medium text-slate-800 shadow-sm';
+        badge.innerHTML = `
+          <span>${casal}</span>
+          <button type="button" onclick="removeCasal(${idx})" class="text-slate-400 hover:text-rose-600 font-bold" title="Remover">&times;</button>
+        `;
+        container.appendChild(badge);
+      });
+    }
+
+    function addCasal() {
+      const input = document.getElementById('novo-casal-input');
+      const nome = input.value.trim();
+      if (!nome) return;
+      if (!stateCadastro.casais.includes(nome)) {
+        stateCadastro.casais.push(nome);
+      }
+      input.value = '';
+      renderCasaisChips();
+    }
+
+    function removeCasal(idx) {
+      stateCadastro.casais.splice(idx, 1);
+      renderCasaisChips();
+    }
+
+    function saveCadastro() {
+      stateCadastro.provincia = document.getElementById('cad-provincia').value.trim();
+      stateCadastro.regiao = document.getElementById('cad-regiao').value.trim();
+      stateCadastro.setor = document.getElementById('cad-setor').value.trim();
+      stateCadastro.nomeEquipe = document.getElementById('cad-nome-equipe').value.trim();
+      stateCadastro.numeroEquipe = document.getElementById('cad-numero-equipe').value.trim();
+      stateCadastro.sce = document.getElementById('cad-sce').value.trim();
+      stateCadastro.cl = document.getElementById('cad-cl').value.trim();
+      stateCadastro.crs = document.getElementById('cad-crs').value.trim();
+
+      localStorage.setItem(STORAGE_KEY_CADASTRO, JSON.stringify(stateCadastro));
+      updateSignaturePreview();
+      renderHomeSummary();
+      showToast('Cadastro da Equipe salvo com sucesso!');
+
+      // Volta automaticamente para a tela inicial após salvar
+      navigateTo('home');
+    }
+
+    // Canvas de Assinatura (Suporte Mouse e Touch Celular)
+    let isDrawing = false;
+    function initSignaturePad() {
+      const canvas = document.getElementById('sig-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: (clientX - rect.left) * (canvas.width / rect.width),
+          y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+      }
+
+      function start(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function move(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      function end() {
+        if (!isDrawing) return;
+        isDrawing = false;
+        stateCadastro.assinaturaDataUrl = canvas.toDataURL('image/png');
+        updateSignaturePreview();
+      }
+
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+
+      canvas.addEventListener('touchstart', start, { passive: false });
+      canvas.addEventListener('touchmove', move, { passive: false });
+      canvas.addEventListener('touchend', end);
+    }
+
+    function clearSignatureCanvas() {
+      const canvas = document.getElementById('sig-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stateCadastro.assinaturaDataUrl = '';
+      updateSignaturePreview();
+    }
+
+    function handleSignatureUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        stateCadastro.assinaturaDataUrl = e.target.result;
+        updateSignaturePreview();
+        showToast('Imagem da assinatura carregada!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateSignaturePreview() {
+      const img = document.getElementById('sig-preview');
+      const empty = document.getElementById('sig-empty-label');
+      const repImg = document.getElementById('rep-sig-img');
+      const repPlaceholder = document.getElementById('rep-sig-placeholder');
+
+      if (stateCadastro.assinaturaDataUrl) {
+        img.src = stateCadastro.assinaturaDataUrl;
+        img.classList.remove('hidden');
+        empty.classList.add('hidden');
+        if (repImg) {
+          repImg.src = stateCadastro.assinaturaDataUrl;
+          repImg.classList.remove('hidden');
+          repPlaceholder.classList.add('hidden');
+        }
+      } else {
+        img.classList.add('hidden');
+        empty.classList.remove('hidden');
+        if (repImg) {
+          repImg.classList.add('hidden');
+          repPlaceholder.classList.remove('hidden');
+        }
+      }
+    }
+
+    function renderHomeSummary() {
+      const box = document.getElementById('home-summary');
+      if (!stateCadastro.nomeEquipe) {
+        box.innerHTML = `
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 flex items-center justify-between gap-4">
+            <span>Nenhuma equipe cadastrada ainda. Comece configurando os dados da sua Equipe ou carregue o exemplo abaixo.</span>
+            <button onclick="navigateTo('cadastro')" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold shrink-0">Cadastrar Agora</button>
+          </div>
+        `;
+        return;
+      }
+
+      const totalRelatorios = Object.keys(stateRelatorios).length;
+      box.innerHTML = `
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <span class="text-slate-400 uppercase font-bold block">Equipe Cadastrada</span>
+            <span class="text-slate-800 font-bold text-sm">Equipe ${stateCadastro.nomeEquipe} (Nº ${stateCadastro.numeroEquipe || '-'})</span>
+            <span class="text-slate-500 block">Província ${stateCadastro.provincia} • Região ${stateCadastro.regiao} • Setor ${stateCadastro.setor}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 uppercase font-bold block">Acompanhamento & Ligação</span>
+            <span class="text-slate-700 block"><strong>SCE/AE:</strong> ${stateCadastro.sce || '-'}</span>
+            <span class="text-slate-700 block"><strong>CL:</strong> ${stateCadastro.cl || '-'} | <strong>CRS:</strong> ${stateCadastro.crs || '-'}</span>
+          </div>
+          <div>
+            <span class="text-slate-400 uppercase font-bold block">Status do Histórico</span>
+            <span class="text-slate-700 block"><strong>Casais na Equipe:</strong> ${stateCadastro.casais.length} casais</span>
+            <span class="text-emerald-700 font-semibold block"><strong>Relatórios Salvos:</strong> ${totalRelatorios} mês(es)</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 4. MÓDULO DE RELATÓRIOS MENSAIS (12 MESES - ANO BASE >= 2026)
+    // =========================================================================
+    function getReportKey(ano = currentAno, mes = currentMes) {
+      return `${ano}-${mes}`;
+    }
+
+    function stepAno(delta) {
+      const input = document.getElementById('sel-ano');
+      let val = parseInt(input.value, 10) || 2026;
+      val = Math.max(2026, val + delta);
+      input.value = val;
+      onChangeAnoMes();
+    }
+
+    function renderMesesGrid() {
+      const inputAno = document.getElementById('sel-ano');
+      let parsedAno = parseInt(inputAno.value, 10);
+      if (isNaN(parsedAno) || parsedAno < 2026) {
+        parsedAno = 2026;
+        inputAno.value = '2026';
+      }
+      currentAno = String(parsedAno);
+      document.getElementById('chart-ano-label').textContent = currentAno;
+
+      const grid = document.getElementById('meses-grid');
+      grid.innerHTML = '';
+
+      MESES.forEach(m => {
+        const key = getReportKey(currentAno, m.num);
+        const hasData = Boolean(stateRelatorios[key]);
+        const isSelected = m.num === currentMes;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => selectMes(m.num);
+        btn.className = `px-2 py-2 rounded-lg text-xs font-semibold border transition flex flex-col items-center justify-center gap-0.5 ${
+          isSelected
+            ? 'bg-sky-700 text-white border-sky-700 shadow-sm'
+            : hasData
+            ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+        }`;
+
+        btn.innerHTML = `
+          <span>${m.curto}</span>
+          <span class="w-1.5 h-1.5 rounded-full ${hasData ? (isSelected ? 'bg-emerald-300' : 'bg-emerald-500') : 'bg-transparent'}"></span>
+        `;
+        grid.appendChild(btn);
+      });
+
+      const badge = document.getElementById('status-mes-badge');
+      const mesObj = MESES.find(x => x.num === currentMes);
+      if (stateRelatorios[getReportKey()]) {
+        badge.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800';
+        badge.textContent = `${mesObj.nome}/${currentAno}: Salvo no histórico`;
+      } else {
+        badge.className = 'text-xs px-2.5 py-1 rounded-full font-medium bg-slate-100 text-slate-600';
+        badge.textContent = `${mesObj.nome}/${currentAno}: Novo / Em branco`;
+      }
+    }
+
+    function selectMes(mesNum) {
+      currentMes = mesNum;
+      renderMesesGrid();
+      updateReportHeaderInfo();
+      loadReportIntoForm();
+      renderAnnualChartCanvas();
+    }
+
+    function onChangeAnoMes() {
+      renderMesesGrid();
+      updateReportHeaderInfo();
+      loadReportIntoForm();
+      renderAnnualChartCanvas();
+    }
+
+    function populateCasaisSelects() {
+      const selectIds = ['rep-cre', 'rep-anfitriao', 'rep-animador', 'rm-local', 'prox-local', 'prox-animador'];
+      const casais = stateCadastro.casais || [];
+
+      selectIds.forEach(id => {
+        const sel = document.getElementById(id);
+        const currentVal = sel.value;
+        sel.innerHTML = `<option value="">-- Selecione um Casal da Equipe --</option>`;
+        casais.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          sel.appendChild(opt);
+        });
+        if (casais.includes(currentVal)) sel.value = currentVal;
+      });
+
+      document.getElementById('rep-cre').onchange = function () {
+        document.getElementById('rep-sig-cre-nome').textContent = this.value || 'CASAL RESPONSÁVEL';
+      };
+    }
+
+    function updateReportHeaderInfo() {
+      const mesNome = MESES.find(m => m.num === currentMes)?.nome || '';
+      document.getElementById('hdr-prov-reg-setor').textContent =
+        `Província ${stateCadastro.provincia || '-'} - Região ${stateCadastro.regiao || '-'} - Setor: ${stateCadastro.setor || '-'}`;
+      document.getElementById('hdr-equipe-mes').textContent =
+        `Equipe ${stateCadastro.nomeEquipe || '-'} (Nº ${stateCadastro.numeroEquipe || '-'}) | Região ${stateCadastro.regiao || '-'} | Reunião Mês: ${mesNome}/${currentAno}`;
+
+      document.getElementById('rep-sce').value = stateCadastro.sce || '';
+      document.getElementById('rep-cl').value = stateCadastro.cl || '';
+      document.getElementById('rep-crs').value = stateCadastro.crs || '';
+      updateSignaturePreview();
+    }
+
+    function toggleSolicClBox() {
+      const isSim = document.getElementById('prep-solic-sim').checked;
+      const wrapper = document.getElementById('prep-solic-desc-wrapper');
+      wrapper.classList.toggle('hidden', !isSim);
+    }
+
+    function collectFormReportData() {
+      return {
+        cre: document.getElementById('rep-cre').value,
+        anfitriao: document.getElementById('rep-anfitriao').value,
+        animador: document.getElementById('rep-animador').value,
+        prepPresCre: document.getElementById('prep-pres-cre').checked,
+        prepPresCa: document.getElementById('prep-pres-ca').checked,
+        prepPresSce: document.getElementById('prep-pres-sce').checked,
+        prepPautaCasais: document.getElementById('prep-pauta-casais').checked,
+        prepPautaCl: document.getElementById('prep-pauta-cl').checked,
+        prepPautaSce: document.getElementById('prep-pauta-sce').checked,
+        prepAnalise: document.querySelector('input[name="prep-analise"]:checked')?.value || '',
+        prepAnaliseDesc: document.getElementById('prep-analise-desc').value,
+        prepQtdRespostas: document.querySelector('input[name="prep-qtd-respostas"]:checked')?.value ?? '',
+        prepSolicCl: document.querySelector('input[name="prep-solic-cl"]:checked')?.value || '',
+        prepSolicDesc: document.getElementById('prep-solic-desc').value,
+        prepSolicData: document.getElementById('prep-solic-data').value,
+        rmLocal: document.getElementById('rm-local').value,
+        rmData: document.getElementById('rm-data').value,
+        rmHorario: document.getElementById('rm-horario').value,
+        rmTodosPresentes: document.querySelector('input[name="rm-todos-presentes"]:checked')?.value || '',
+        rmFaltasJustificativa: document.getElementById('rm-faltas-justificativa').value,
+        rmHoraInicio: document.getElementById('rm-hora-inicio').value,
+        rmHoraTermino: document.getElementById('rm-hora-termino').value,
+        rmTempoSuficiente: document.querySelector('input[name="rm-tempo-suficiente"]:checked')?.value || '',
+        rmTempoJustificativa: document.getElementById('rm-tempo-justificativa').value,
+        rmOracao: document.getElementById('rm-oracao').value,
+        rmPartilha: document.getElementById('rm-partilha').value,
+        rmCoparticipacao: document.getElementById('rm-coparticipacao').value,
+        rmTemaEstudo: document.getElementById('rm-tema-estudo').value,
+        rmRefeicao: document.getElementById('rm-refeicao').value,
+        rmVidaEquipe: document.getElementById('rm-vida-equipe').value,
+        rmContribValor: document.getElementById('rm-contrib-valor').value,
+        rmContribData: document.getElementById('rm-contrib-data').value,
+        rmConsideracaoFinal: document.getElementById('rm-consideracao-final').value,
+        proxData: document.getElementById('prox-data').value,
+        proxLocal: document.getElementById('prox-local').value,
+        proxAnimador: document.getElementById('prox-animador').value,
+        proxPreparatoria: document.getElementById('prox-preparatoria').value,
+        rmDataRelatorio: document.getElementById('rm-data-relatorio').value
+      };
+    }
+
+    function loadReportIntoForm() {
+      populateCasaisSelects();
+      updateReportHeaderInfo();
+      const data = stateRelatorios[getReportKey()] || {};
+
+      document.getElementById('rep-cre').value = data.cre || '';
+      document.getElementById('rep-sig-cre-nome').textContent = data.cre || 'CASAL RESPONSÁVEL';
+      document.getElementById('rep-anfitriao').value = data.anfitriao || '';
+      document.getElementById('rep-animador').value = data.animador || '';
+
+      document.getElementById('prep-pres-cre').checked = Boolean(data.prepPresCre);
+      document.getElementById('prep-pres-ca').checked = Boolean(data.prepPresCa);
+      document.getElementById('prep-pres-sce').checked = Boolean(data.prepPresSce);
+
+      document.getElementById('prep-pauta-casais').checked = Boolean(data.prepPautaCasais);
+      document.getElementById('prep-pauta-cl').checked = Boolean(data.prepPautaCl);
+      document.getElementById('prep-pauta-sce').checked = Boolean(data.prepPautaSce);
+
+      document.getElementById('prep-analise-sim').checked = data.prepAnalise === 'SIM';
+      document.getElementById('prep-analise-nao').checked = data.prepAnalise === 'NAO';
+      document.getElementById('prep-analise-desc').value = data.prepAnaliseDesc || '';
+
+      // Compatibilidade: se havia prepEstudo === 'SIM' antigo, marca 4 por padrão
+      let qtdResp = data.prepQtdRespostas;
+      if (qtdResp === undefined || qtdResp === '') {
+        if (data.prepEstudo === 'SIM') qtdResp = '4';
+      }
+      document.querySelectorAll('input[name="prep-qtd-respostas"]').forEach(radio => {
+        radio.checked = String(qtdResp) === radio.value;
+      });
+
+      document.getElementById('prep-solic-sim').checked = data.prepSolicCl === 'SIM';
+      document.getElementById('prep-solic-nao').checked = data.prepSolicCl === 'NAO';
+      document.getElementById('prep-solic-desc').value = data.prepSolicDesc || '';
+      document.getElementById('prep-solic-data').value = data.prepSolicData || '';
+      toggleSolicClBox();
+
+      document.getElementById('rm-local').value = data.rmLocal || '';
+      document.getElementById('rm-data').value = data.rmData || '';
+      document.getElementById('rm-horario').value = data.rmHorario || '';
+
+      document.getElementById('rm-pres-sim').checked = data.rmTodosPresentes === 'SIM';
+      document.getElementById('rm-pres-nao').checked = data.rmTodosPresentes === 'NAO';
+      document.getElementById('rm-faltas-justificativa').value = data.rmFaltasJustificativa || '';
+
+      document.getElementById('rm-hora-inicio').value = data.rmHoraInicio || '';
+      document.getElementById('rm-hora-termino').value = data.rmHoraTermino || '';
+
+      document.getElementById('rm-tempo-sim').checked = data.rmTempoSuficiente === 'SIM';
+      document.getElementById('rm-tempo-nao').checked = data.rmTempoSuficiente === 'NAO';
+      document.getElementById('rm-tempo-justificativa').value = data.rmTempoJustificativa || '';
+
+      document.getElementById('rm-oracao').value = data.rmOracao || '';
+      document.getElementById('rm-partilha').value = data.rmPartilha || '';
+      document.getElementById('rm-coparticipacao').value = data.rmCoparticipacao || '';
+      document.getElementById('rm-tema-estudo').value = data.rmTemaEstudo || '';
+      document.getElementById('rm-refeicao').value = data.rmRefeicao || '';
+      document.getElementById('rm-vida-equipe').value = data.rmVidaEquipe || '';
+
+      document.getElementById('rm-contrib-valor').value = data.rmContribValor || '';
+      document.getElementById('rm-contrib-data').value = data.rmContribData || '';
+      document.getElementById('rm-consideracao-final').value = data.rmConsideracaoFinal || '';
+
+      document.getElementById('prox-data').value = data.proxData || '';
+      document.getElementById('prox-local').value = data.proxLocal || '';
+      document.getElementById('prox-animador').value = data.proxAnimador || '';
+      document.getElementById('prox-preparatoria').value = data.proxPreparatoria || '';
+      document.getElementById('rm-data-relatorio').value = data.rmDataRelatorio || '';
+    }
+
+    function saveCurrentReport() {
+      const key = getReportKey();
+      stateRelatorios[key] = collectFormReportData();
+      localStorage.setItem(STORAGE_KEY_RELATORIOS, JSON.stringify(stateRelatorios));
+      renderMesesGrid();
+      renderAnnualChartCanvas();
+      showToast(`Relatório de ${MESES.find(m => m.num === currentMes).nome}/${currentAno} salvo!`);
+    }
+
+    function clearCurrentMonthReport() {
+      if (!confirm('Deseja limpar os campos do mês selecionado?')) return;
+      delete stateRelatorios[getReportKey()];
+      localStorage.setItem(STORAGE_KEY_RELATORIOS, JSON.stringify(stateRelatorios));
+      loadReportIntoForm();
+      renderMesesGrid();
+      renderAnnualChartCanvas();
+      showToast('Dados do mês limpos.');
+    }
+
+    // =========================================================================
+    // 5. GRÁFICO EM LINHAS DOS 12 MESES (DUPLO EIXO Y: RESPOSTAS X CONTRIBUIÇÃO)
+    // =========================================================================
+    function parseCurrencyBR(str) {
+      if (!str) return 0;
+      const cleaned = String(str).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      const val = parseFloat(cleaned);
+      return isNaN(val) || val < 0 ? 0 : val;
+    }
+
+    function getAnnualSeriesData(ano) {
+      // Inclui os dados em edição na tela para o mês atual em tempo real
+      const liveForm = collectFormReportData();
+      const respostas = [];
+      const contribuicoes = [];
+
+      MESES.forEach(m => {
+        const key = `${ano}-${m.num}`;
+        const source = (ano === currentAno && m.num === currentMes)
+          ? { ...(stateRelatorios[key] || {}), ...liveForm }
+          : (stateRelatorios[key] || {});
+
+        let rVal = parseInt(source.prepQtdRespostas, 10);
+        if (isNaN(rVal)) {
+          rVal = source.prepEstudo === 'SIM' ? 4 : 0;
+        }
+        rVal = Math.max(0, Math.min(7, rVal));
+        const cVal = parseCurrencyBR(source.rmContribValor);
+
+        respostas.push(rVal);
+        contribuicoes.push(cVal);
+      });
+
+      return { respostas, contribuicoes };
+    }
+
+    function onChangeChartInputs() {
+      renderAnnualChartCanvas();
+    }
+
+    function renderAnnualChartCanvas() {
+      const canvas = document.getElementById('annual-chart-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const { respostas, contribuicoes } = getAnnualSeriesData(currentAno);
+      const maxContribRaw = Math.max(...contribuicoes, 100);
+      const maxContrib = Math.ceil(maxContribRaw / 50) * 50;
+
+      const padL = 64;
+      const padR = 82;
+      const padT = 28;
+      const padB = 42;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      // Fundo da área do gráfico
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(padL, padT, plotW, plotH);
+
+      // Grade horizontal (0 a 7 no eixo esquerdo, proporcional no eixo direito)
+      ctx.font = '11px Inter, sans-serif';
+      for (let i = 0; i <= 7; i++) {
+        const ratio = i / 7;
+        const y = padT + plotH - ratio * plotH;
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + plotW, y);
+        ctx.stroke();
+
+        // Rótulo Esquerdo: Respostas (0 a 7)
+        ctx.fillStyle = '#0369a1';
+        ctx.textAlign = 'right';
+        ctx.fillText(String(i), padL - 10, y + 4);
+
+        // Rótulo Direito: Contribuição (R$)
+        const cVal = Math.round(ratio * maxContrib);
+        ctx.fillStyle = '#047857';
+        ctx.textAlign = 'left';
+        ctx.fillText(`R$ ${cVal}`, padL + plotW + 10, y + 4);
+      }
+
+      // Títulos laterais dos eixos
+      ctx.save();
+      ctx.fillStyle = '#0369a1';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.translate(18, padT + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Respostas (0 a 7)', 0, 0);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = '#047857';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.translate(W - 14, padT + plotH / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.fillText('Contribuição (R$)', 0, 0);
+      ctx.restore();
+
+      // Coordenadas X dos 12 meses
+      const getX = (idx) => padL + (idx / 11) * plotW;
+      const getYResp = (val) => padT + plotH - (val / 7) * plotH;
+      const getYContrib = (val) => padT + plotH - (val / maxContrib) * plotH;
+
+      // Rótulos dos 12 meses no eixo X
+      MESES.forEach((m, idx) => {
+        const x = getX(idx);
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(m.curto, x, padT + plotH + 22);
+      });
+
+      // Linha 1: Quantidade de Respostas (Azul)
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      respostas.forEach((val, idx) => {
+        const x = getX(idx);
+        const y = getYResp(val);
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      respostas.forEach((val, idx) => {
+        const x = getX(idx);
+        const y = getYResp(val);
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        if (val > 0) {
+          ctx.font = 'bold 10px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(val), x, y - 8);
+        }
+      });
+
+      // Linha 2: Valor da Contribuição Mensal (Verde)
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      contribuicoes.forEach((val, idx) => {
+        const x = getX(idx);
+        const y = getYContrib(val);
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      contribuicoes.forEach((val, idx) => {
+        const x = getX(idx);
+        const y = getYContrib(val);
+        ctx.fillStyle = '#059669';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        if (val > 0) {
+          ctx.font = 'bold 9.5px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`R$${Math.round(val)}`, x, y + 14);
+        }
+      });
+    }
+
+    // =========================================================================
+    // 6. DADOS DE EXEMPLO (Ajustado para Ano Base 2026) E BACKUP
+    // =========================================================================
+    function loadSampleData() {
+      stateCadastro = {
+        provincia: 'Leste',
+        regiao: 'Espírito Santo',
+        setor: 'Vitória A',
+        nomeEquipe: 'Nossa Senhora da Saúde',
+        numeroEquipe: '09',
+        casais: [
+          'Lívia e Homero',
+          'Fabiana e Denisson',
+          'Polyana e Rodrigo',
+          'Samira e Júnior',
+          'Tatiane e Alexandre'
+        ],
+        sce: 'Pe. Marcos Antônio Azevedo Carvalho, C.Ss.R.',
+        cl: 'Valéria e Jefferson',
+        crs: 'Casal Responsável do Setor Vitória A',
+        assinaturaDataUrl: stateCadastro.assinaturaDataUrl || ''
+      };
+
+      stateRelatorios['2026-12'] = {
+        cre: 'Lívia e Homero',
+        anfitriao: 'Fabiana e Denisson',
+        animador: 'Polyana e Rodrigo',
+        prepPresCre: true,
+        prepPresCa: true,
+        prepPresSce: false,
+        prepPautaCasais: true,
+        prepPautaCl: true,
+        prepPautaSce: false,
+        prepAnalise: 'SIM',
+        prepAnaliseDesc: 'Não.',
+        prepQtdRespostas: '5',
+        prepSolicCl: 'NAO',
+        prepSolicDesc: '',
+        prepSolicData: '',
+        rmLocal: 'Fabiana e Denisson',
+        rmData: '2026-12-06',
+        rmHorario: '19:30',
+        rmTodosPresentes: 'NAO',
+        rmFaltasJustificativa: 'Os casais Samira e Júnior, Tatiane e Alexandre não participaram desta reunião.',
+        rmHoraInicio: '19:30',
+        rmHoraTermino: '23:00',
+        rmTempoSuficiente: 'SIM',
+        rmTempoJustificativa: 'Os momentos foram bem distribuídos e proveitosos.',
+        rmOracao: 'Os momentos de oração contou com a participação da maioria dos equipistas.',
+        rmPartilha: 'A partilha foi bem distribuída e de qualidade.\nCom uma breve retrospectiva do ano, os casais falaram dos PCEs que mais lhes ajudaram e os que ainda precisam melhorar.',
+        rmCoparticipacao: 'Vários casais partilharam suas alegrias e conquistas profissionais, entre outras questões.',
+        rmTemaEstudo: 'Falamos sobre a importância do Natal e o que ela representa para cada um.\nFalamos sobre a alegria, a busca pela felicidade, mas também lembramos que é importante buscarmos a simplicidade que Deus nos apresentou, nascendo em circunstâncias tão adversas.',
+        rmRefeicao: 'Fizemos a benção dos alimentos, seguido de um lanche, logo no início da reunião.',
+        rmVidaEquipe: 'Neste mês 3 casais participaram da missa do Pré-EACRE e apenas 1 casal participou da missa do Setor em Jacaraípe.\nNeste mês também não conseguimos nos encontrar para nossa noite de oração e não teve social.',
+        rmContribValor: '250,00',
+        rmContribData: '2026-12-21',
+        rmConsideracaoFinal: 'Um participante chegou um pouco atrasado devido a um compromisso paroquial.',
+        proxData: '2027-01-30',
+        proxLocal: 'Lívia e Homero',
+        proxAnimador: 'Fabiana e Denisson',
+        proxPreparatoria: '2027-01-11',
+        rmDataRelatorio: '2026-12-21'
+      };
+
+      localStorage.setItem(STORAGE_KEY_CADASTRO, JSON.stringify(stateCadastro));
+      localStorage.setItem(STORAGE_KEY_RELATORIOS, JSON.stringify(stateRelatorios));
+
+      document.getElementById('sel-ano').value = '2026';
+      currentAno = '2026';
+      currentMes = '12';
+      navigateTo('relatorio');
+      showToast('Exemplo (Equipe 09 - Dezembro/2026) carregado!');
+    }
+
+    function exportBackupJSON() {
+      const payload = {
+        cadastro: stateCadastro,
+        relatorios: stateRelatorios,
+        exportadoEm: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_rrm_equipe_${stateCadastro.numeroEquipe || 'ens'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackupJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.cadastro) stateCadastro = parsed.cadastro;
+          if (parsed.relatorios) stateRelatorios = parsed.relatorios;
+          localStorage.setItem(STORAGE_KEY_CADASTRO, JSON.stringify(stateCadastro));
+          localStorage.setItem(STORAGE_KEY_RELATORIOS, JSON.stringify(stateRelatorios));
+          renderHomeSummary();
+          showToast('Backup importado com sucesso!');
+        } catch (err) {
+          alert('Arquivo JSON inválido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // =========================================================================
+    // 7. GERAÇÃO DO PDF OFICIAL COM LOGO, CAMPO EDITÁVEL E GRÁFICO ANUAL
+    // =========================================================================
+    function formatDateBR(iso) {
+      if (!iso) return '___/___/______';
+      const parts = iso.split('-');
+      if (parts.length !== 3) return iso;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function wrapText(text, maxCharsPerLine = 92) {
+      if (!text) return ['-'];
+      const paragraphs = String(text).split('\n');
+      const lines = [];
+      paragraphs.forEach(p => {
+        const words = p.trim().split(/\s+/);
+        if (words.length === 0 || (words.length === 1 && words[0] === '')) {
+          lines.push('');
+          return;
+        }
+        let currentLine = words[0];
+        for (let i = 1; i < words.length; i++) {
+          if ((currentLine + ' ' + words[i]).length <= maxCharsPerLine) {
+            currentLine += ' ' + words[i];
+          } else {
+            lines.push(currentLine);
+            currentLine = words[i];
+          }
+        }
+        lines.push(currentLine);
+      });
+      return lines;
+    }
+
+    async function getPngBytesFromSource(src) {
+      if (!src) return null;
+      try {
+        const resp = await fetch(src, { mode: 'cors' });
+        if (resp.ok) {
+          const contentType = resp.headers.get('content-type') || '';
+          if (contentType.includes('image/png')) {
+            const buf = await resp.arrayBuffer();
+            return new Uint8Array(buf);
+          }
+        }
+      } catch (_) {}
+
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || 400;
+            canvas.height = img.naturalHeight || 250;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(async (blob) => {
+              if (!blob) return resolve(null);
+              const buf = await blob.arrayBuffer();
+              resolve(new Uint8Array(buf));
+            }, 'image/png');
+          } catch (e) {
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function generateOfficialPDF() {
+      // Salva automaticamente antes de exportar
+      saveCurrentReport();
+      const r = collectFormReportData();
+      const mesNome = MESES.find(m => m.num === currentMes)?.nome || '';
+
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+      const PAGE_W = 595.28; // A4
+      const PAGE_H = 841.89;
+      const MARGIN = 32;
+      const CONTENT_W = PAGE_W - MARGIN * 2;
+
+      let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      let y = PAGE_H - MARGIN;
+
+      const colorNavy = rgb(0.05, 0.28, 0.52);
+      const colorGold = rgb(0.95, 0.72, 0.15);
+      const colorGreen = rgb(0.02, 0.58, 0.41);
+      const colorLightBg = rgb(0.95, 0.97, 0.99);
+      const colorBorder = rgb(0.75, 0.80, 0.86);
+      const colorText = rgb(0.1, 0.12, 0.16);
+
+      function drawCenteredText(text, yPos, size, font, color = colorText) {
+        const safeText = String(text || '');
+        const textWidth = font.widthOfTextAtSize(safeText, size);
+        const xPos = MARGIN + Math.max(4, (CONTENT_W - textWidth) / 2);
+        page.drawText(safeText, { x: xPos, y: yPos, size, font, color });
+      }
+
+      function ensureSpace(neededHeight) {
+        if (y - neededHeight < MARGIN + 20) {
+          page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+          y = PAGE_H - MARGIN;
+        }
+      }
+
+      // 1. CABEÇALHO 1: Logo Oficial Centralizada (Metade do tamanho) + Frases Centralizadas (Imagens 1 e 2)
+      if (!cachedLogoPngBytes) {
+        await preloadOfficialLogoBytes();
+      }
+      if (cachedLogoPngBytes) {
+        try {
+          const logoImg = await pdfDoc.embedPng(cachedLogoPngBytes);
+          const dims = logoImg.scaleToFit(72, 38);
+          page.drawImage(logoImg, {
+            x: MARGIN + (CONTENT_W - dims.width) / 2,
+            y: y - dims.height,
+            width: dims.width,
+            height: dims.height
+          });
+          y -= (dims.height + 6);
+        } catch (_) {}
+      }
+
+      drawCenteredText('Equipes de Nossa Senhora', y - 12, 14, fontBold, colorNavy);
+      drawCenteredText('Movimento de Casais por uma Espiritualidade Conjugal', y - 26, 9, fontRegular, colorText);
+
+      y -= 36;
+
+      // 2. CABEÇALHO 2: Título e Dados do Cadastro Centralizados
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - 20,
+        width: CONTENT_W,
+        height: 20,
+        color: colorNavy
+      });
+      drawCenteredText('RELATÓRIO DA REUNIÃO MENSAL', y - 14, 10.5, fontBold, rgb(1, 1, 1));
+      y -= 22;
+
+      const hdrHeight = 74;
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - hdrHeight,
+        width: CONTENT_W,
+        height: hdrHeight,
+        color: colorLightBg,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+
+      const line1 = `Província ${stateCadastro.provincia || '-'}  -  Região ${stateCadastro.regiao || '-'}  -  Setor: ${stateCadastro.setor || '-'}`;
+      const line2 = `Equipe: ${stateCadastro.nomeEquipe || '-'} (Nº ${stateCadastro.numeroEquipe || '-'})   |   Região: ${stateCadastro.regiao || '-'}   |   Reunião Mês: ${mesNome}/${currentAno}`;
+      const line3 = `Casal Responsável de Equipe (CRE): ${r.cre || '-'}   |   SCE / AE: ${stateCadastro.sce || '-'}`;
+      const line4 = `Anfitrião: ${r.anfitriao || '-'}  |  Casal Animador: ${r.animador || '-'}  |  Casal Ligação: ${stateCadastro.cl || '-'}  |  CRS: ${stateCadastro.crs || '-'}`;
+
+      drawCenteredText(line1, y - 15, 8.8, fontBold, colorText);
+      drawCenteredText(line2, y - 30, 8.8, fontBold, colorNavy);
+      drawCenteredText(line3, y - 46, 8.5, fontRegular, colorText);
+      drawCenteredText(line4, y - 61, 8.2, fontRegular, colorText);
+
+      y -= (hdrHeight + 8);
+
+      // 3. SEÇÃO: REUNIÃO PREPARATÓRIA
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - 18,
+        width: CONTENT_W,
+        height: 18,
+        color: colorGold
+      });
+      page.drawText('REUNIÃO PREPARATÓRIA', {
+        x: MARGIN + 8,
+        y: y - 13,
+        size: 9.5,
+        font: fontBold,
+        color: colorText
+      });
+      y -= 20;
+
+      const chk = (val) => (val ? '[ X ]' : '[   ]');
+      const hasSolicDesc = r.prepSolicCl === 'SIM' && r.prepSolicDesc && r.prepSolicDesc.trim().length > 0;
+      const prepBoxH = hasSolicDesc ? 104 : 88;
+
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - prepBoxH,
+        width: CONTENT_W,
+        height: prepBoxH,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+
+      page.drawText(
+        `Presentes:   ${chk(r.prepPresCre)} CRE     ${chk(r.prepPresCa)} CA     ${chk(r.prepPresSce)} SCE`,
+        { x: MARGIN + 8, y: y - 14, size: 8.5, font: fontRegular, color: colorText }
+      );
+      page.drawText(
+        `Pauta anterior entregue c/ antecedência para:   ${chk(r.prepPautaCasais)} Casais   ${chk(r.prepPautaCl)} CL   ${chk(r.prepPautaSce)} SCE`,
+        { x: MARGIN + 225, y: y - 14, size: 8.5, font: fontRegular, color: colorText }
+      );
+
+      page.drawText(
+        `Os casais da preparatória fizeram análise da reunião anterior?   ${chk(r.prepAnalise === 'SIM')} SIM   ${chk(r.prepAnalise === 'NAO')} NÃO`,
+        { x: MARGIN + 8, y: y - 32, size: 8.5, font: fontRegular, color: colorText }
+      );
+      page.drawText(
+        `Ponto a ser trabalhado / assunto retomado: ${(r.prepAnaliseDesc || 'Não.').replace(/\n/g, ' ')}`,
+        { x: MARGIN + 8, y: y - 47, size: 8.3, font: fontRegular, color: colorText }
+      );
+
+      // Imagem 5: Quantos casais enviaram as respostas antes da reunião de pauta? (0 a 7)
+      const numOptions = ['0', '1', '2', '3', '4', '5', '6', '7']
+        .map(n => `${String(r.prepQtdRespostas) === n ? '[X]' : '[ ]'} ${n}`)
+        .join('  ');
+      page.drawText(
+        `Quantos casais enviaram as respostas antes da reunião de pauta?   ${numOptions}`,
+        { x: MARGIN + 8, y: y - 64, size: 8.2, font: fontRegular, color: colorText }
+      );
+
+      page.drawText(
+        `Solicitação p/ o CL aguardando resposta? ${chk(r.prepSolicCl === 'SIM')} SIM  ${chk(r.prepSolicCl === 'NAO')} NÃO   |   Data combinada c/ CL: ${formatDateBR(r.prepSolicData)}`,
+        { x: MARGIN + 8, y: y - 80, size: 8.5, font: fontRegular, color: colorText }
+      );
+
+      if (hasSolicDesc) {
+        page.drawText(
+          `Solicitação ao CL: ${r.prepSolicDesc.replace(/\n/g, ' ').substring(0, 95)}`,
+          { x: MARGIN + 8, y: y - 95, size: 8.3, font: fontRegular, color: colorNavy }
+        );
+      }
+
+      y -= (prepBoxH + 8);
+
+      // 4. SEÇÃO: REUNIÃO MENSAL
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - 18,
+        width: CONTENT_W,
+        height: 18,
+        color: colorNavy
+      });
+      page.drawText('REUNIÃO MENSAL', {
+        x: MARGIN + 8,
+        y: y - 13,
+        size: 9.5,
+        font: fontBold,
+        color: rgb(1, 1, 1)
+      });
+      y -= 20;
+
+      const rmInfoH = 74;
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - rmInfoH,
+        width: CONTENT_W,
+        height: rmInfoH,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+
+      page.drawText(
+        `Local: Casa de ${r.rmLocal || '-'}     |     Data: ${formatDateBR(r.rmData)}     |     Horário: ${r.rmHorario || '-'}`,
+        { x: MARGIN + 8, y: y - 14, size: 8.6, font: fontBold, color: colorText }
+      );
+      page.drawText(
+        `Todos os casais estavam presentes?  ${chk(r.rmTodosPresentes === 'SIM')} Sim   ${chk(r.rmTodosPresentes === 'NAO')} Não   |   Justificativa: ${(r.rmFaltasJustificativa || '-').replace(/\n/g, ' ').substring(0, 75)}`,
+        { x: MARGIN + 8, y: y - 30, size: 8.3, font: fontRegular, color: colorText }
+      );
+      page.drawText(
+        `Horário de Início: ${r.rmHoraInicio || '-'}   |   Horário de Término: ${r.rmHoraTermino || '-'}   |   Tempo bem distribuído nas 5 partes? ${chk(r.rmTempoSuficiente === 'SIM')} Sim  ${chk(r.rmTempoSuficiente === 'NAO')} Não`,
+        { x: MARGIN + 8, y: y - 47, size: 8.3, font: fontRegular, color: colorText }
+      );
+      page.drawText(
+        `Avaliação do tempo: ${(r.rmTempoJustificativa || '-').replace(/\n/g, ' ').substring(0, 95)}`,
+        { x: MARGIN + 8, y: y - 63, size: 8.3, font: fontRegular, color: colorText }
+      );
+
+      y -= (rmInfoH + 6);
+
+      function drawTextSection(title, content) {
+        const lines = wrapText(content, 95);
+        const boxH = Math.max(28, lines.length * 11.5 + 18);
+        ensureSpace(boxH + 10);
+
+        page.drawRectangle({
+          x: MARGIN,
+          y: y - boxH,
+          width: CONTENT_W,
+          height: boxH,
+          borderColor: colorBorder,
+          borderWidth: 0.8
+        });
+
+        page.drawText(title, {
+          x: MARGIN + 8,
+          y: y - 12,
+          size: 8.5,
+          font: fontBold,
+          color: colorNavy
+        });
+
+        let lineY = y - 24;
+        lines.forEach(line => {
+          page.drawText(line, {
+            x: MARGIN + 8,
+            y: lineY,
+            size: 8.3,
+            font: fontRegular,
+            color: colorText
+          });
+          lineY -= 11.5;
+        });
+
+        y -= (boxH + 5);
+      }
+
+      drawTextSection('MOMENTO DE ORAÇÃO:', r.rmOracao);
+      drawTextSection('PARTILHA:', r.rmPartilha);
+      drawTextSection('COPARTICIPAÇÃO:', r.rmCoparticipacao);
+      drawTextSection('TEMA DE ESTUDO:', r.rmTemaEstudo);
+      drawTextSection('REFEIÇÃO:', r.rmRefeicao);
+      drawTextSection('VIDA DE EQUIPE NO MOVIMENTO:', r.rmVidaEquipe);
+
+      // CONTRIBUIÇÃO (Título centralizado no topo e conteúdo centralizado)
+      ensureSpace(64);
+      const contribH = 54;
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - contribH,
+        width: CONTENT_W,
+        height: contribH,
+        color: colorLightBg,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+
+      drawCenteredText('CONTRIBUIÇÃO', y - 13, 9.5, fontBold, colorNavy);
+      drawCenteredText(
+        `Valor da Contribuição Mensal: R$ ${r.rmContribValor || '0,00'}   |   Depositado ou Boleto Pago em: ${formatDateBR(r.rmContribData)}`,
+        y - 28,
+        8.6,
+        fontBold,
+        colorText
+      );
+      drawCenteredText(
+        'Obs.: Todos os meses o CRE deverá enviar junto com o Relatório Mensal, entregue ao CL, uma cópia do comprovante de pagamento da Contribuição.',
+        y - 43,
+        7.5,
+        fontRegular,
+        colorText
+      );
+      y -= (contribH + 5);
+
+      // CONSIDERAÇÃO FINAL
+      drawTextSection('CONSIDERAÇÃO FINAL:', r.rmConsideracaoFinal);
+
+      // PRÓXIMA REUNIÃO (Imagem 3: PRÓXIMA REUNIÃO como Título no topo sobre todo o restante do conteúdo)
+      ensureSpace(60);
+      const proxH = 50;
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - proxH,
+        width: CONTENT_W,
+        height: proxH,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+      drawCenteredText('PRÓXIMA REUNIÃO', y - 13, 9.5, fontBold, colorNavy);
+      drawCenteredText(
+        `Data: ${formatDateBR(r.proxData)}   |   Local: Casa de ${r.proxLocal || '-'}`,
+        y - 28,
+        8.5,
+        fontBold,
+        colorText
+      );
+      drawCenteredText(
+        `Casal Animador: ${r.proxAnimador || '-'}   |   Reunião Preparatória: ${formatDateBR(r.proxPreparatoria)}`,
+        y - 41,
+        8.5,
+        fontRegular,
+        colorText
+      );
+      y -= (proxH + 8);
+
+      // DATA DO RELATÓRIO, ASSINATURA E OBSERVAÇÃO (Imagem 4: Ordem por linha: 1 Data, 2 Assinatura, 3 Observação)
+      ensureSpace(115);
+
+      // Linha 1: Data do Relatório
+      drawCenteredText(`Data do Relatório: ${formatDateBR(r.rmDataRelatorio)}`, y - 12, 9, fontBold, colorText);
+      y -= 18;
+
+      // Linha 2: Assinatura cadastrada + Nome do CRE
+      if (stateCadastro.assinaturaDataUrl) {
+        const sigBytes = await getPngBytesFromSource(stateCadastro.assinaturaDataUrl);
+        if (sigBytes) {
+          try {
+            const sigImg = await pdfDoc.embedPng(sigBytes);
+            const sDims = sigImg.scaleToFit(135, 34);
+            page.drawImage(sigImg, {
+              x: MARGIN + (CONTENT_W - sDims.width) / 2,
+              y: y - 34,
+              width: sDims.width,
+              height: sDims.height
+            });
+          } catch (_) {}
+        }
+      }
+
+      page.drawLine({
+        start: { x: MARGIN + (CONTENT_W - 200) / 2, y: y - 36 },
+        end: { x: MARGIN + (CONTENT_W + 200) / 2, y: y - 36 },
+        thickness: 0.8,
+        color: colorText
+      });
+      drawCenteredText((r.cre || 'Casal Responsável').toUpperCase(), y - 47, 8.4, fontBold, colorText);
+      drawCenteredText('Casal Responsável de Equipe - CRE', y - 57, 7.6, fontRegular, colorText);
+      y -= 68;
+
+      // Linha 3: Observação 1
+      drawCenteredText(
+        'Obs. 1: O Relatório deverá ser enviado para o CL até 5 dias após a realização da Reunião Mensal.',
+        y - 6,
+        7.8,
+        fontRegular,
+        colorText
+      );
+      y -= 16;
+
+      // 5. CONSIDERAÇÃO DO CASAL LIGAÇÃO (Campo Editável no PDF em negrito e tamanho padrão 9pt)
+      const clBoxH = 88;
+      ensureSpace(clBoxH + 10);
+
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - clBoxH,
+        width: CONTENT_W,
+        height: clBoxH,
+        color: colorLightBg,
+        borderColor: colorNavy,
+        borderWidth: 1
+      });
+
+      page.drawText(
+        'CONSIDERAÇÃO DO CASAL LIGAÇÃO: (CL descreve os pontos ou acontecimentos relevantes do Mês,',
+        { x: MARGIN + 8, y: y - 13, size: 8, font: fontBold, color: colorNavy }
+      );
+      page.drawText(
+        'citando sua atuação ou pedido de esclarecimentos, mantendo dessa forma o CRS informado sobre o andamento da EQUIPE).',
+        { x: MARGIN + 8, y: y - 23, size: 7.6, font: fontRegular, color: colorText }
+      );
+
+      const form = pdfDoc.getForm();
+      const clTextField = form.createTextField('consideracao_casal_ligacao');
+      clTextField.enableMultiline();
+      clTextField.setText('');
+      clTextField.addToPage(page, {
+        x: MARGIN + 8,
+        y: y - clBoxH + 8,
+        width: CONTENT_W - 16,
+        height: clBoxH - 35,
+        textColor: colorText,
+        backgroundColor: rgb(1, 1, 1),
+        borderColor: colorBorder,
+        borderWidth: 0.8,
+        font: fontBold
+      });
+      clTextField.setFontSize(9);
+      clTextField.updateAppearances(fontBold);
+
+      y -= (clBoxH + 10);
+
+      // 6. GRÁFICO EM LINHAS DOS 12 MESES AO FINAL DO RELATÓRIO PDF (Duplo Eixo Y)
+      const chartBoxH = 165;
+      ensureSpace(chartBoxH + 10);
+
+      page.drawRectangle({
+        x: MARGIN,
+        y: y - chartBoxH,
+        width: CONTENT_W,
+        height: chartBoxH,
+        borderColor: colorBorder,
+        borderWidth: 0.8
+      });
+
+      drawCenteredText(
+        `EVOLUÇÃO ANUAL (${currentAno}) — RESPOSTAS ENVIADAS (0 a 7) X CONTRIBUIÇÃO MENSAL (R$)`,
+        y - 13,
+        8.5,
+        fontBold,
+        colorNavy
+      );
+      drawCenteredText(
+        'Eixo Esquerdo (Azul): Casais que enviaram respostas (0 a 7)     |     Eixo Direito (Verde): Valor da Contribuição Mensal (R$)',
+        y - 24,
+        7.3,
+        fontBold,
+        colorText
+      );
+
+      const { respostas, contribuicoes } = getAnnualSeriesData(currentAno);
+      const maxContribRaw = Math.max(...contribuicoes, 100);
+      const maxContrib = Math.ceil(maxContribRaw / 50) * 50;
+
+      const cLeft = MARGIN + 42;
+      const cRight = MARGIN + CONTENT_W - 54;
+      const cPlotW = cRight - cLeft;
+      const cTop = y - 36;
+      const cBottom = y - chartBoxH + 22;
+      const cPlotH = cTop - cBottom;
+
+      // Linhas horizontais de grade e rótulos dos dois eixos (Esquerda: 0 a 7, Direita: R$)
+      for (let i = 0; i <= 7; i++) {
+        const ratio = i / 7;
+        const gy = cBottom + ratio * cPlotH;
+
+        page.drawLine({
+          start: { x: cLeft, y: gy },
+          end: { x: cRight, y: gy },
+          thickness: 0.4,
+          color: rgb(0.86, 0.89, 0.93)
+        });
+
+        // Eixo esquerdo: 0 a 7
+        page.drawText(String(i), {
+          x: cLeft - 14,
+          y: gy - 2.5,
+          size: 6.8,
+          font: fontBold,
+          color: colorNavy
+        });
+
+        // Eixo direito: R$
+        const valR = Math.round(ratio * maxContrib);
+        page.drawText(`R$ ${valR}`, {
+          x: cRight + 6,
+          y: gy - 2.5,
+          size: 6.8,
+          font: fontBold,
+          color: colorGreen
+        });
+      }
+
+      const getPdfX = (idx) => cLeft + (idx / 11) * cPlotW;
+      const getPdfYResp = (val) => cBottom + (val / 7) * cPlotH;
+      const getPdfYContrib = (val) => cBottom + (val / maxContrib) * cPlotH;
+
+      // Rótulos dos 12 meses no eixo X
+      MESES.forEach((m, idx) => {
+        const px = getPdfX(idx);
+        page.drawText(m.curto, {
+          x: px - 7,
+          y: cBottom - 12,
+          size: 7,
+          font: fontBold,
+          color: colorText
+        });
+      });
+
+      // Série 1: Linha de Respostas (Azul)
+      for (let i = 0; i < 11; i++) {
+        page.drawLine({
+          start: { x: getPdfX(i), y: getPdfYResp(respostas[i]) },
+          end: { x: getPdfX(i + 1), y: getPdfYResp(respostas[i + 1]) },
+          thickness: 1.6,
+          color: colorNavy
+        });
+      }
+      respostas.forEach((val, idx) => {
+        const px = getPdfX(idx);
+        const py = getPdfYResp(val);
+        page.drawCircle({ x: px, y: py, size: 2.3, color: colorNavy });
+        if (val > 0) {
+          page.drawText(String(val), { x: px - 2, y: py + 4, size: 6.5, font: fontBold, color: colorNavy });
+        }
+      });
+
+      // Série 2: Linha de Contribuição Mensal (Verde)
+      for (let i = 0; i < 11; i++) {
+        page.drawLine({
+          start: { x: getPdfX(i), y: getPdfYContrib(contribuicoes[i]) },
+          end: { x: getPdfX(i + 1), y: getPdfYContrib(contribuicoes[i + 1]) },
+          thickness: 1.6,
+          color: colorGreen
+        });
+      }
+      contribuicoes.forEach((val, idx) => {
+        const px = getPdfX(idx);
+        const py = getPdfYContrib(val);
+        page.drawCircle({ x: px, y: py, size: 2.3, color: colorGreen });
+        if (val > 0) {
+          page.drawText(`R$${Math.round(val)}`, { x: px - 10, y: py - 9, size: 6.2, font: fontBold, color: colorGreen });
+        }
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentMes} - RRM.Eq.${stateCadastro.numeroEquipe || '00'} - ${mesNome} ${currentAno}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('PDF Oficial gerado com sucesso!');
+    }
+  </script>
+</body>
+</html>
